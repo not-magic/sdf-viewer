@@ -35,6 +35,12 @@ pub struct CliMesher {
     pub mesher: Meshers,
 }
 
+#[derive(Debug)]
+pub enum CliMesherFormat {
+    PLY,
+    STL
+}
+
 impl CliMesher {
     /// Runs the CLI for the mesher, using all the configured parameters.
     pub async fn run_cli(self) -> anyhow::Result<()> {
@@ -45,7 +51,7 @@ impl CliMesher {
             let f = io::stdout();
             let mut f = BufWriter::new(f);
             // Run as usual
-            self.run_custom_out(&mut f).await?;
+            self.run_custom_out(&mut f, CliMesherFormat::PLY).await?;
         } else {
             // Check that the output file does not exist yet or fail
             let output_file = self.output_file.to_str().unwrap().to_string();
@@ -57,15 +63,25 @@ impl CliMesher {
             // Buffer writes for faster performance
             let mut f = BufWriter::new(f);
             // Run as usual
-            self.run_custom_out(&mut f).await?;
+
+            if let Some(extension) = self.output_file.clone().extension() {
+                let ext = extension.to_str().unwrap_or("ply");
+
+                let format = if ext == "stl" { CliMesherFormat::STL } else { CliMesherFormat::PLY };
+
+                self.run_custom_out(&mut f, format).await?;
+            } else {
+                anyhow::bail!("Output file must have a known extension (.ply or .stl)")
+            }
+
         };
         Ok(())
     }
 
     /// Runs the mesher and writes the output to the given writer instead of the configured file.
-    pub async fn run_custom_out<W: Write>(self, w: &mut W) -> anyhow::Result<usize> {
+    pub async fn run_custom_out<W: Write>(self, w: &mut W, format: CliMesherFormat) -> anyhow::Result<usize> {
         // Start loading input SDF (using common code with the app)
-        tracing::info!("Loading SDF from {:?}...", self.input);
+        tracing::info!("Exporting SDF from {:?} to {:?}...", self.input, format);
         let (sender_of_updates, mut receiver_of_updates) = mpsc::channel(1);
         spawn_async(async move { load::load_sdf_from_path_or_url(sender_of_updates, self.input.clone()) }, false);
         // Wait for the loaded SDF to be ready
@@ -82,8 +98,31 @@ impl CliMesher {
         tracing::info!("Post-processing the mesh ({} vertices, {} triangles)...", mesh.vertices.len(), mesh.indices.len() / 3);
         mesh.postproc(&input_sdf);
         // Write the mesh to the output file or fail
-        tracing::info!("Serializing output mesh...");
-        Ok(mesh.serialize_ply(w)?)
+
+        if let CliMesherFormat::STL = format {
+            #[cfg(feature = "stl_io")]
+            {
+                tracing::info!("Serializing STL...");
+                return Ok(mesh.serialize_stl(w)?)
+            }
+
+            #[cfg(not(feature = "stl_io"))]
+            tracing::info!("stl_io feature was not enabled when compiling");
+        }
+
+        if let CliMesherFormat::PLY = format {
+
+            #[cfg(feature = "ply-rs")]
+            {
+                tracing::info!("Serializing PLY...");
+                return Ok(mesh.serialize_ply(w)?)
+            }
+
+            #[cfg(not(feature = "ply-rs"))]
+            tracing::info!("ply-rs feature was not enabled when compiling");
+        }
+
+        Ok(0)
     }
 }
 

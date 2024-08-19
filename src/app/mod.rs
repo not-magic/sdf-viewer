@@ -20,6 +20,7 @@ use crate::cli::env_get;
 use crate::sdf::demo::cube::SDFDemoCube;
 use crate::sdf::SDFSurface;
 use crate::sdf::wasm::load::spawn_async;
+use crate::sdf::meshers::CliMesherFormat;
 
 pub mod cli;
 pub mod scene;
@@ -362,7 +363,7 @@ impl SDFViewerApp {
             let mut in_memory_model = vec![];
             let output_file_clone = mesher.output_file.to_str().unwrap_or("").to_string();
             if output_file_clone.is_empty() || output_file_clone.eq("-") {
-                if let Err(err) = mesher.run_custom_out(&mut in_memory_model).await {
+                if let Err(err) = mesher.run_custom_out(&mut in_memory_model, CliMesherFormat::PLY).await {
                     let msg = format!("Failed to export model: {err}");
                     error!("{}", msg);
                     in_memory_model = msg.into_bytes();
@@ -377,7 +378,7 @@ impl SDFViewerApp {
                     in_memory_model = "Done!".to_string().into_bytes();
                 }
                 #[cfg(target_arch = "wasm32")]
-                if let Err(err) = mesher.run_custom_out(&mut in_memory_model).await {
+                if let Err(err) = mesher.run_custom_out(&mut in_memory_model, CliMesherFormat::PLY).await {
                     let msg = format!("Failed to export model: {}", err);
                     error!("{}", msg);
                     in_memory_model = msg.into_bytes();

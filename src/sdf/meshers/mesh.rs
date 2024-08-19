@@ -127,6 +127,43 @@ impl Mesh {
         let w = Writer::new();
         w.write_ply(out, &mut ply)
     }
+
+    /// Serializes the mesh to a STL model file.
+    /// It exports all mesh data, although some values may be in a non-standard format.
+    #[cfg(feature = "stl_io")]
+    pub fn serialize_stl<T: Write>(&self, out: &mut T) -> std::io::Result<usize> {
+
+        let mut mesh = Vec::<stl_io::Triangle>::new();
+
+        for v in self.indices.as_slice().chunks_exact(3) {
+            let index0 = v[0] as usize;
+            let index1 = v[1] as usize;
+            let index2 = v[2] as usize;
+
+            let normal = self.vertices[index0].normal;
+            let p0 = self.vertices[index0].position;
+            let p1 = self.vertices[index1].position;
+            let p2 = self.vertices[index2].position;
+
+            let triangle = stl_io::Triangle {
+                normal : stl_io::Normal::new([normal[0], normal[1], normal[2]]),
+                vertices : [
+                    stl_io::Vertex::new([p0[0], p0[1], p0[2]]),
+                    stl_io::Vertex::new([p1[0], p1[1], p1[2]]),
+                    stl_io::Vertex::new([p2[0], p2[1], p2[2]])
+                ]
+            };
+
+            mesh.push(triangle);
+        }
+
+        // write to bytes so we can return the size
+        let mut binary_out = Vec::<u8>::new();
+        stl_io::write_stl(&mut binary_out, mesh.iter())?;
+        out.write_all(&binary_out)?;
+
+        Ok(binary_out.len())
+    }
 }
 
 /// A vertex of the mesh.

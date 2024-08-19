@@ -33,7 +33,7 @@ server = ["standalone", # <-- other features
 
 # Convert the SDF to a 3D model. Adds a command and a toolbar option (if app) for generating triangle meshes
 meshers = ["standalone", "sdf", "wasminterpreters", # <-- other features
-    "ply-rs", "isosurface"]
+    "ply-rs", "stl_io", "isosurface"]
 
 # An executable that runs a program instead of providing an API, i.e., an app and/or a server
 standalone = [
@@ -87,7 +87,8 @@ klask = { git = "https://github.com/Yeicor/klask", default-features = false, opt
 shadow-rs = { version = "0.32", default-features = false, optional = true } # Web does not support the git2 optional dependency, which is unnecessary
 
 # === MESHERS ===
-ply-rs = { version = "0.1", optional = true } # Mesh output format
+ply-rs = { version = "0.1", optional = true } # .ply Mesh output format
+stl_io = { version = "0.8", optional = true } # .stl mesh output format
 isosurface = { git = "https://github.com/swiftcoder/isosurface", optional = true } # Generate triangle meshes from SDFs
 
 # === MISC ===
