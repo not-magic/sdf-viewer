@@ -119,7 +119,11 @@ impl SDFViewerAppScene {
 
         // Create more lights
         lights.push(Box::new(DirectionalLight::new(
-            &ctx, 0.9, Srgba::WHITE, &vec3(-1.0, -1.0, -1.0))));
+            &ctx, 1.5, Srgba::WHITE, &vec3(-1.0, -1.0, -1.0))));
+
+        // Rim light
+        lights.push(Box::new(DirectionalLight::new(
+            &ctx, 0.3, Srgba::new_opaque(210, 210, 255), &vec3(0.5, 0.5, 1.0))));
 
         Self {
             ctx,
