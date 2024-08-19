@@ -45,14 +45,14 @@ impl CameraController {
                     // Rotate the camera in an orbit around the target
                     let target = *self.camera.target();
                     let zoom_dist = self.camera.position().distance(target);
-                    let delta = dragged_delta * self.sensitivity * 0.05 * zoom_dist;
+                    let delta = dragged_delta * self.sensitivity * 0.02 * zoom_dist;
                     self.camera.rotate_around(&target, delta.x, delta.y);
                 } else {
                     self.is_rotating = Some(false);
                     // Move the camera target
                     let target = *self.camera.target();
                     let zoom_dist = self.camera.position().distance(target);
-                    let delta = dragged_delta * self.sensitivity * 0.01 * zoom_dist;
+                    let delta = dragged_delta * self.sensitivity * 0.001 * zoom_dist;
                     let right_direction = self.camera.right_direction();
                     let up_direction = right_direction.cross(self.camera.view_direction());
                     let delta_camera_space = right_direction * -delta.x + up_direction * delta.y;
